@@ -1,203 +1,144 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DataTable, {
   TableHead,
   TableBody,
   TableRow,
   TableCell,
 } from "@/components/data-table";
+import { mockFetch, AccountData } from "./api/mock";
 
-const mockData = [
-  {
-    id: 1,
-    name: "Alice Chen",
-    mail: "alice.chen@example.com",
-    totalBalance: 10230.75,
-    issueDate: 1714003200000, // 2024-04-25
-    balance: 230.75,
-    hasPaid: false,
-  },
-  {
-    id: 2,
-    name: "Brian Lee",
-    mail: "brian.lee@example.com",
-    totalBalance: 15480.0,
-    issueDate: 1711411200000, // 2024-03-26
-    balance: 480.0,
-    hasPaid: true,
-  },
-  {
-    id: 3,
-    name: "Cathy Wu",
-    mail: "cathy.wu@example.com",
-    totalBalance: 9200.5,
-    issueDate: 1706745600000, // 2024-02-01
-    balance: 1200.5,
-    hasPaid: true,
-  },
-  {
-    id: 4,
-    name: "David Ho",
-    mail: "david.ho@example.com",
-    totalBalance: 18900.0,
-    issueDate: 1704067200000, // 2024-01-01
-    balance: 1900.0,
-    hasPaid: true,
-  },
-  {
-    id: 5,
-    name: "Eva Lin",
-    mail: "eva.lin@example.com",
-    totalBalance: 6600.35,
-    issueDate: 1716768000000, // 2024-05-27
-    balance: 600.35,
-    hasPaid: false,
-  },
-  {
-    id: 6,
-    name: "Frank Tsai",
-    mail: "frank.tsai@example.com",
-    totalBalance: 13200.0,
-    issueDate: 1710374400000, // 2024-03-14
-    balance: 200.0,
-    hasPaid: false,
-  },
-  {
-    id: 7,
-    name: "Grace Hsu",
-    mail: "grace.hsu@example.com",
-    totalBalance: 8750.75,
-    issueDate: 1698796800000, // 2023-11-01
-    balance: 750.75,
-    hasPaid: true,
-  },
-  {
-    id: 8,
-    name: "Henry Yang",
-    mail: "henry.yang@example.com",
-    totalBalance: 10050.0,
-    issueDate: 1709251200000, // 2024-02-29
-    balance: 50.0,
-    hasPaid: true,
-  },
-  {
-    id: 9,
-    name: "Ivy Chang",
-    mail: "ivy.chang@example.com",
-    totalBalance: 14560.6,
-    issueDate: 1701388800000, // 2023-12-01
-    balance: 1560.6,
-    hasPaid: false,
-  },
-  {
-    id: 10,
-    name: "Jack Wang",
-    mail: "jack.wang@example.com",
-    totalBalance: 3900.2,
-    issueDate: 1719878400000, // 2024-08-02
-    balance: 900.2,
-    hasPaid: false,
-  },
-  {
-    id: 11,
-    name: "Karen Liu",
-    mail: "karen.liu@example.com",
-    totalBalance: 12700.0,
-    issueDate: 1712294400000, // 2024-04-05
-    balance: 700.0,
-    hasPaid: false,
-  },
-  {
-    id: 12,
-    name: "Leo Chou",
-    mail: "leo.chou@example.com",
-    totalBalance: 7600.9,
-    issueDate: 1722470400000, // 2024-08-31
-    balance: 600.9,
-    hasPaid: false,
-  },
-  {
-    id: 13,
-    name: "Mia Kuo",
-    mail: "mia.kuo@example.com",
-    totalBalance: 11110.11,
-    issueDate: 1720915200000, // 2024-08-13
-    balance: 110.11,
-    hasPaid: true,
-  },
-];
+type DataItem = {
+  id: number;
+  name: string;
+  mail: string;
+  totalBalance: number;
+  issueDate: number;
+  balance: number;
+  hasPaid: boolean;
+};
+
+function paginateData<T>(
+  data: Array<T>,
+  page: number,
+  pageSize: number,
+) {
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const pageData = data.slice(start, end);
+  const maxPages = Math.ceil(data.length / pageSize);
+  return { pageData, maxPages };
+}
 
 export default function Home() {
   const [showBalance, setShowBalance] = useState(false);
+  const [tableData, setTableData] = useState<Array<AccountData>>([]);
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+  const pageStart = (page - 1) * pageSize;
+
+  const { maxPages } = paginateData(
+    tableData,
+    page,
+    pageSize,
+  );
+
+  useEffect(() => {
+    const loadData = async () => {
+      const result = await mockFetch({ page, pageSize });
+      console.log(result);
+      setTableData(result);
+    };
+    loadData();
+  }, [page, pageSize]);
+
   return (
-    <DataTable data={mockData}>
-      <TableHead>
-        <TableRow>
-          <TableCell>
-            <input
-              type="checkbox"
-              aria-label="Select all accounts"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                console.log("Select all:", e.target.checked);
-              }}
-            />
-          </TableCell>
-          <TableCell>ID</TableCell>
-          <TableCell>CLIENT</TableCell>
-          <TableCell>TOTAL</TableCell>
-          <TableCell>ISSUE DATE</TableCell>
-          <TableCell>BALANCE</TableCell>
-          <TableCell>ACTIONS</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {mockData.map((item) => (
-          <TableRow key={item.id}>
+    <>
+      <DataTable>
+        <TableHead>
+          <TableRow>
             <TableCell>
               <input
                 type="checkbox"
-                aria-label={`Select account ${item.id}`}
+                aria-label="Select all accounts"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  console.log(`Select account ${item.id}:`, e.target.checked);
+                  console.log("Select all:", e.target.checked);
                 }}
               />
             </TableCell>
-            <TableCell>{`#${item.id}`}</TableCell>
-            <TableCell>
-              <strong>{item.name}</strong>
-              <br />
-              {item.mail}
-            </TableCell>
-            <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
-            <TableCell>
-              {" "}
-              {new Date(item.issueDate).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </TableCell>
-            <TableCell>
-              {showBalance
-                ? `$${Math.trunc(item.balance)}`
-                : item.hasPaid
-                  ? "Paid"
-                  : "NoPaid"}
-            </TableCell>
-            <TableCell>
-              <button
-                onClick={() => {
-                  setShowBalance(!showBalance);
-                  console.log(`Toggle balance for account ${item.id}`);
-                }}
-                aria-label={`Toggle balance for account ${item.id}`}
-              >
-                {showBalance ? "Hide Balance" : "Show Balance"}
-              </button>
-            </TableCell>
+            <TableCell>ID</TableCell>
+            <TableCell>CLIENT</TableCell>
+            <TableCell>TOTAL</TableCell>
+            <TableCell>ISSUE DATE</TableCell>
+            <TableCell>BALANCE</TableCell>
+            <TableCell>ACTIONS</TableCell>
           </TableRow>
-        ))}
-      </TableBody>
-    </DataTable>
+        </TableHead>
+        <TableBody>
+          {tableData.map((item: DataItem) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <input
+                  type="checkbox"
+                  aria-label={`Select account ${item.id}`}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    console.log(`Select account ${item.id}:`, e.target.checked);
+                  }}
+                />
+              </TableCell>
+              <TableCell>{`#${item.id}`}</TableCell>
+              <TableCell>
+                <strong>{item.name}</strong>
+                <br />
+                {item.mail}
+              </TableCell>
+              <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
+              <TableCell>
+                {new Date(item.issueDate).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </TableCell>
+              <TableCell>
+                {showBalance
+                  ? `$${Math.trunc(item.balance)}`
+                  : item.hasPaid
+                    ? "Paid"
+                    : "NoPaid"}
+              </TableCell>
+              <TableCell>
+                <button
+                  onClick={() => {
+                    setShowBalance(!showBalance);
+                    console.log(`Toggle balance for account ${item.id}`);
+                  }}
+                  aria-label={`Toggle balance for account ${item.id}`}
+                >
+                  {showBalance ? "Hide Balance" : "Show Balance"}
+                </button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </DataTable>
+      <div>
+        <button
+          onClick={() => setPage((p) => Math.max(p - 1, 1))}
+          disabled={page === 1}
+        >
+          Previous
+        </button>
+        <span>{`${pageStart + 1}-${Math.min(pageStart + pageSize, tableData.length)} of ${tableData.length}`}</span>
+        <button
+          onClick={() =>
+            setPage((p) => Math.min(p + 1, maxPages))
+          }
+          disabled={page === maxPages}
+        >
+          Next
+        </button>
+      </div>
+    </>
   );
 }
