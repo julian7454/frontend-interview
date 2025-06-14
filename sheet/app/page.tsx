@@ -32,7 +32,7 @@ const loadData = async (
     } else {
       console.log("fetching data for page", page);
       const result: AccountDataWithShowBalance[] = (
-        await mockFetch({ page, pageSize })
+        await mockFetch({ page, pageSize: pageSize * 2 })
       ).map((item: AccountData) => ({
         ...item,
         showBalance: false,
