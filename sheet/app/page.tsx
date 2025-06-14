@@ -14,43 +14,54 @@ type AccountDataWithShowBalance = AccountData & {
   visible: boolean;
 };
 
+const cache = new Map<number, AccountDataWithShowBalance[]>();
+const allData = new Map<number, AccountDataWithShowBalance>();
+
 const loadData = async (
   page: number,
   pageSize: number,
-  setTableData: React.Dispatch<
-    React.SetStateAction<AccountDataWithShowBalance[]>
-  >
+  setTableData: React.Dispatch<React.SetStateAction<AccountDataWithShowBalance[]>>
 ) => {
   try {
-    const result: AccountDataWithShowBalance[] = (
-      await mockFetch({ page, pageSize })
-    ).map((item: AccountData) => ({
-      ...item,
-      showBalance: false,
-      checked: false,
-      visible: true,
-    }));
-    setTableData(result);
+    const pageStart = (page - 1) * pageSize;
+
+    if (cache.has(page)) {
+      const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
+      setTableData(pageData);
+    } else {
+      const result: AccountDataWithShowBalance[] = (
+        await mockFetch({ page, pageSize })
+      ).map((item: AccountData) => ({
+        ...item,
+        showBalance: false,
+        checked: false,
+        visible: true,
+      }));
+
+      result.forEach(item => allData.set(item.id, item));
+      cache.set(page, result);
+      const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
+
+      setTableData(pageData.length ? pageData : result.slice(0, pageSize));
+    }
   } catch (error) {
     console.error("Error fetching data:", error);
   }
 };
 
 export default function Home() {
-  const [tableData, setTableData] = useState<Array<AccountDataWithShowBalance>>(
-    []
-  );
+  const [tableData, setTableData] = useState<Array<AccountDataWithShowBalance>>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(totalItems);
 
   const pageSize = 9;
   const pageStart = (page - 1) * pageSize;
-  const maxPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const maxPages = Math.max(1, Math.ceil(total / pageSize));
 
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTotal(totalItems);
+    console.log("Loading data for page:", page);
     loadData(page, pageSize, setTableData);
   }, [page, pageSize]);
 
@@ -72,27 +83,31 @@ export default function Home() {
   const currentPageCount = visibleData.length;
 
   const start = !currentPageCount ? 0 : pageStart + 1;
-  const end = Math.min(pageStart + currentPageCount, total);
-  const currentTotal = total - (tableData.length - currentPageCount);
+  const end = !currentPageCount
+    ? 0
+    : Math.min(pageStart + currentPageCount, allData.size);
+
 
   const handleDelete = useCallback(() => {
     let deletedCount = 0;
-    setTableData((prevData) => {
-      const newData = prevData.filter((item) => !item.checked);
-      deletedCount = prevData.length - newData.length;
 
-      const isEmpty = newData.filter((item) => item.visible).length === 0;
-
-      if (isEmpty && page < maxPages) {
-        setPage(page + 1);
+    tableData.forEach(item => {
+      if (item.checked) {
+        allData.delete(item.id);
+        deletedCount++;
       }
-      if (isEmpty && page === maxPages) {
-        setPage(1);
-      }
-      return newData;
     });
+
+    const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
+
+    setTableData(pageData);
     setTotal((prevTotal) => prevTotal - deletedCount);
-  }, [page, maxPages]);
+
+    if (pageData.length === 0) {
+      setPage(page > 1 ? page - 1 : page + 1);
+    }
+
+  }, [page, pageSize, pageStart, tableData]);
 
   return (
     <>
@@ -102,23 +117,31 @@ export default function Home() {
         ref={searchInputRef}
         onChange={(e) => {
           const searchTerm = e.target.value.toLowerCase();
-          setTableData((prevData) =>
-            prevData.map((item) => ({
-              ...item,
-              visible:
-                item.name.toLowerCase().includes(searchTerm) ||
-                item.mail.toLowerCase().includes(searchTerm) ||
-                item.id.toString().includes(searchTerm),
-            }))
-          );
+          const filtered = Array.from(allData.values()).map((item) => ({
+            ...item,
+            visible:
+              item.name.toLowerCase().includes(searchTerm) ||
+              item.mail.toLowerCase().includes(searchTerm) ||
+              item.id.toString().includes(searchTerm),
+          }));
+
+          filtered.forEach(item => allData.set(item.id, item));
+          const pageData = filtered
+            .filter(item => item.visible)
+            .slice(pageStart, pageStart + pageSize);
+          setTableData(pageData);
+          setTotal(filtered.filter(item => item.visible).length);
         }}
       />
       <button onClick={handleDelete}>Delete</button>
       <button
         onClick={async () => {
-          // 重新請求 mockFetch 並刷新資料
           if (searchInputRef.current) searchInputRef.current.value = "";
-          await loadData(page, pageSize, setTableData);
+
+          cache.clear();
+          allData.clear();
+          setPage(1);
+          loadData(1, pageSize, setTableData);
         }}
       >
         Refresh Invoice
@@ -133,10 +156,12 @@ export default function Home() {
                 aria-label="Select all accounts"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const isChecked = e.target.checked;
-                  setTableData((prevData) =>
-                    prevData.map((item) => ({ ...item, checked: isChecked }))
-                  );
-                  console.log(`Select all accounts: ${isChecked}`);
+                  const updated = tableData.map(item => ({
+                    ...item,
+                    checked: isChecked,
+                  }));
+                  updated.forEach(item => allData.set(item.id, item));
+                  setTableData(updated);
                 }}
               />
             </TableCell>
@@ -158,14 +183,11 @@ export default function Home() {
                   checked={item.checked}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const isChecked = e.target.checked;
-                    setTableData((prevData) =>
-                      prevData.map((acc) =>
-                        acc.id === item.id
-                          ? { ...acc, checked: isChecked }
-                          : acc
-                      )
-                    );
-                    console.log(`Select account ${item.id}: ${isChecked}`);
+                    allData.set(item.id, { ...item, checked: isChecked });
+                    const pageData = Array.from(allData.values())
+                      .filter(it => it.visible)
+                      .slice(pageStart, pageStart + pageSize);
+                    setTableData(pageData);
                   }}
                 />
               </TableCell>
@@ -193,14 +215,12 @@ export default function Home() {
               <TableCell>
                 <button
                   onClick={() => {
-                    setTableData((prevData) =>
-                      prevData.map((acc) =>
-                        acc.id === item.id
-                          ? { ...acc, showBalance: !acc.showBalance }
-                          : acc
-                      )
-                    );
-                    console.log(`Toggle balance for account ${item.id}`);
+                    const updated = { ...item, showBalance: !item.showBalance };
+                    allData.set(item.id, updated);
+                    const pageData = Array.from(allData.values())
+                      .filter(it => it.visible)
+                      .slice(pageStart, pageStart + pageSize);
+                    setTableData(pageData);
                   }}
                   aria-label={`Toggle balance for account ${item.id}`}
                 >
@@ -218,7 +238,7 @@ export default function Home() {
         >
           Previous
         </button>
-        <span>{`${start}-${end} of ${currentTotal}`} </span>
+        <span>{`${start}-${end} of ${total}`}</span>
         <button
           onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
           disabled={page === maxPages}
@@ -229,3 +249,4 @@ export default function Home() {
     </>
   );
 }
+
