@@ -26,9 +26,11 @@ const loadData = async (
     const pageStart = (page - 1) * pageSize;
 
     if (cache.has(page)) {
+      console.log("cache hit for page", page);
       const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
       setTableData(pageData);
     } else {
+      console.log("fetching data for page", page);
       const result: AccountDataWithShowBalance[] = (
         await mockFetch({ page, pageSize })
       ).map((item: AccountData) => ({
@@ -61,7 +63,6 @@ export default function Home() {
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log("Loading data for page:", page);
     loadData(page, pageSize, setTableData);
   }, [page, pageSize]);
 
@@ -82,11 +83,12 @@ export default function Home() {
   const visibleData = tableData.filter((item) => item.visible);
   const currentPageCount = visibleData.length;
 
-  const start = !currentPageCount ? 0 : pageStart + 1;
+  const start = !currentPageCount
+    ? 0
+    : allData.size < pageSize ? 1 : pageStart + 1;
   const end = !currentPageCount
     ? 0
     : Math.min(pageStart + currentPageCount, allData.size);
-
 
   const handleDelete = useCallback(() => {
     let deletedCount = 0;
@@ -107,7 +109,64 @@ export default function Home() {
       setPage(page > 1 ? page - 1 : page + 1);
     }
 
-  }, [page, pageSize, pageStart, tableData]);
+  }, [page, pageStart, tableData]);
+
+  const handleSelectAll = useCallback((isChecked: boolean) => {
+    const updated = tableData.map(item => ({
+      ...item,
+      checked: isChecked,
+    }));
+    updated.forEach(item => allData.set(item.id, item));
+    setTableData(updated);
+  }, [tableData]);
+
+  const handleSearch = useCallback((searchTerm: string) => {
+    const filtered = Array.from(allData.values()).map((item) => ({
+      ...item,
+      visible:
+        item.name.toLowerCase().includes(searchTerm) ||
+        item.mail.toLowerCase().includes(searchTerm) ||
+        item.id.toString().includes(searchTerm),
+    }));
+
+    filtered.forEach(item => allData.set(item.id, item));
+    const pageData = filtered
+      .filter(item => item.visible)
+      .slice(pageStart, pageStart + pageSize);
+    setTableData(pageData);
+    setTotal(Array.from(allData.values()).filter(item => item.visible).length);
+  }, [pageStart]);
+
+  const handleRefresh = useCallback(() => {
+    if (searchInputRef.current) searchInputRef.current.value = "";
+    cache.clear();
+    allData.clear();
+    setPage(1);
+    setTotal(totalItems);
+    loadData(1, pageSize, setTableData);
+  }, []);
+
+  const handleShowBalanceToggle = (item: AccountDataWithShowBalance) => {
+    setTableData(prevData =>
+      prevData.map(it =>
+        it.id === item.id
+          ? { ...it, showBalance: !it.showBalance }
+          : it
+      )
+    );
+    allData.set(item.id, { ...item, showBalance: !item.showBalance });
+  };
+
+  const handleSelect = (id: number, isChecked: boolean) => {
+    setTableData(prevData =>
+      prevData.map(it =>
+        it.id === id
+          ? { ...it, checked: isChecked }
+          : it
+      )
+    );
+    allData.set(id, { ...allData.get(id)!, checked: isChecked });
+  }
 
   return (
     <>
@@ -115,34 +174,11 @@ export default function Home() {
         type="text"
         placeholder="Search Invoice..."
         ref={searchInputRef}
-        onChange={(e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          const filtered = Array.from(allData.values()).map((item) => ({
-            ...item,
-            visible:
-              item.name.toLowerCase().includes(searchTerm) ||
-              item.mail.toLowerCase().includes(searchTerm) ||
-              item.id.toString().includes(searchTerm),
-          }));
-
-          filtered.forEach(item => allData.set(item.id, item));
-          const pageData = filtered
-            .filter(item => item.visible)
-            .slice(pageStart, pageStart + pageSize);
-          setTableData(pageData);
-          setTotal(filtered.filter(item => item.visible).length);
-        }}
+        onChange={(e) => handleSearch(e.target.value.toLowerCase())}
       />
       <button onClick={handleDelete}>Delete</button>
       <button
-        onClick={async () => {
-          if (searchInputRef.current) searchInputRef.current.value = "";
-
-          cache.clear();
-          allData.clear();
-          setPage(1);
-          loadData(1, pageSize, setTableData);
-        }}
+        onClick={handleRefresh}
       >
         Refresh Invoice
       </button>
@@ -154,15 +190,7 @@ export default function Home() {
                 type="checkbox"
                 ref={selectAllRef}
                 aria-label="Select all accounts"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const isChecked = e.target.checked;
-                  const updated = tableData.map(item => ({
-                    ...item,
-                    checked: isChecked,
-                  }));
-                  updated.forEach(item => allData.set(item.id, item));
-                  setTableData(updated);
-                }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAll(e.target.checked)}
               />
             </TableCell>
             <TableCell>ID</TableCell>
@@ -181,14 +209,7 @@ export default function Home() {
                   type="checkbox"
                   aria-label={`Select account ${item.id}`}
                   checked={item.checked}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const isChecked = e.target.checked;
-                    allData.set(item.id, { ...item, checked: isChecked });
-                    const pageData = Array.from(allData.values())
-                      .filter(it => it.visible)
-                      .slice(pageStart, pageStart + pageSize);
-                    setTableData(pageData);
-                  }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
                 />
               </TableCell>
               <TableCell>{`#${item.id}`}</TableCell>
@@ -214,14 +235,7 @@ export default function Home() {
               </TableCell>
               <TableCell>
                 <button
-                  onClick={() => {
-                    const updated = { ...item, showBalance: !item.showBalance };
-                    allData.set(item.id, updated);
-                    const pageData = Array.from(allData.values())
-                      .filter(it => it.visible)
-                      .slice(pageStart, pageStart + pageSize);
-                    setTableData(pageData);
-                  }}
+                  onClick={() => handleShowBalanceToggle(item)}
                   aria-label={`Toggle balance for account ${item.id}`}
                 >
                   {item.showBalance ? "Hide Balance" : "Show Balance"}
