@@ -5,6 +5,7 @@ import DataTable, {
   TableBody,
   TableRow,
   TableCell,
+  TableFoot,
 } from "@/components/data-table";
 import { mockFetch, AccountData, totalItems } from "./api/mock";
 
@@ -169,98 +170,113 @@ export default function Home() {
   }
 
   return (
-    <>
-      <input
-        type="text"
-        placeholder="Search Invoice..."
-        ref={searchInputRef}
-        onChange={(e) => handleSearch(e.target.value.toLowerCase())}
-      />
-      <button onClick={handleDelete}>Delete</button>
-      <button
-        onClick={handleRefresh}
-      >
-        Refresh Invoice
-      </button>
-      <DataTable>
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <input
-                type="checkbox"
-                ref={selectAllRef}
-                aria-label="Select all accounts"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAll(e.target.checked)}
-              />
-            </TableCell>
-            <TableCell>ID</TableCell>
-            <TableCell>CLIENT</TableCell>
-            <TableCell>TOTAL</TableCell>
-            <TableCell>ISSUE DATE</TableCell>
-            <TableCell>BALANCE</TableCell>
-            <TableCell>ACTIONS</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {visibleData.map((item) => (
-            <TableRow key={item.id}>
+    <div className="grid grid-rows-[1fr_auto] min-h-screen">
+      <main className="pt-24 pb-8 px-4">
+        <div className="bg-white shadow-md flex justify-end pt-4 pr-4">
+          <input
+            className="border border-gray-300 rounded p-2 mb-4 w-38 h-11"
+            type="text"
+            placeholder="Search Invoice..."
+            ref={searchInputRef}
+            onChange={(e) => handleSearch(e.target.value.toLowerCase())}
+          />
+          <button className="w-38 h-11 bg-red-700 text-white" onClick={handleDelete}>Delete</button>
+          <button
+            className="w-38 h-11 bg-purple-700 text-white"
+            onClick={handleRefresh}
+          >
+            Refresh Invoice
+          </button>
+        </div>
+        <DataTable>
+          <TableHead>
+            <TableRow>
               <TableCell>
                 <input
                   type="checkbox"
-                  aria-label={`Select account ${item.id}`}
-                  checked={item.checked}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
+                  ref={selectAllRef}
+                  aria-label="Select all accounts"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAll(e.target.checked)}
                 />
               </TableCell>
-              <TableCell>{`#${item.id}`}</TableCell>
-              <TableCell>
-                <strong>{item.name}</strong>
-                <br />
-                {item.mail}
-              </TableCell>
-              <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
-              <TableCell>
-                {new Date(item.issueDate).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </TableCell>
-              <TableCell>
-                {item.showBalance
-                  ? `$${Math.trunc(item.balance)}`
-                  : item.hasPaid
-                    ? "Paid"
-                    : "NoPaid"}
-              </TableCell>
-              <TableCell>
-                <button
-                  onClick={() => handleShowBalanceToggle(item)}
-                  aria-label={`Toggle balance for account ${item.id}`}
-                >
-                  {item.showBalance ? "Hide Balance" : "Show Balance"}
-                </button>
+              <TableCell>ID</TableCell>
+              <TableCell>CLIENT</TableCell>
+              <TableCell>TOTAL</TableCell>
+              <TableCell>ISSUE DATE</TableCell>
+              <TableCell>BALANCE</TableCell>
+              <TableCell>ACTIONS</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {visibleData.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    aria-label={`Select account ${item.id}`}
+                    checked={item.checked}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
+                  />
+                </TableCell>
+                <TableCell>{`#${item.id}`}</TableCell>
+                <TableCell>
+                  <div className="text-left ml-6">
+                    <strong>{item.name}</strong>
+                    <br />
+                    {item.mail}
+                  </div>
+                </TableCell>
+                <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
+                <TableCell>
+                  {new Date(item.issueDate).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </TableCell>
+                <TableCell>
+                  {item.showBalance
+                    ? `$${Math.trunc(item.balance)}`
+                    : item.hasPaid
+                      ? "Paid"
+                      : "NoPaid"}
+                </TableCell>
+                <TableCell>
+                  <button
+                    onClick={() => handleShowBalanceToggle(item)}
+                    aria-label={`Toggle balance for account ${item.id}`}
+                  >
+                    {item.showBalance ? "Hide Balance" : "Show Balance"}
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFoot>
+            <TableRow>
+              <TableCell colSpan={7}>
+                <p className="text-right">
+                  <button
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page === 1}
+                  >
+                    Previous
+                  </button>
+                  <span>{`${start}-${end} of ${total}`}</span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
+                    disabled={page === maxPages}
+                  >
+                    Next
+                  </button>
+                </p>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </DataTable>
-      <div>
-        <button
-          onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          disabled={page === 1}
-        >
-          Previous
-        </button>
-        <span>{`${start}-${end} of ${total}`}</span>
-        <button
-          onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
-          disabled={page === maxPages}
-        >
-          Next
-        </button>
-      </div>
-    </>
+          </TableFoot>
+        </DataTable>
+      </main>
+      <footer>footer</footer>
+    </div>
   );
 }
 
