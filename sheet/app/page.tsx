@@ -14,7 +14,7 @@ type AccountDataWithShowBalance = AccountData & {
   visible: boolean;
 };
 
-const cache = new Map<number, AccountDataWithShowBalance[]>();
+const cache = new Set<number>();
 const allData = new Map<number, AccountDataWithShowBalance>();
 
 const loadData = async (
@@ -41,7 +41,7 @@ const loadData = async (
       }));
 
       result.forEach(item => allData.set(item.id, item));
-      cache.set(page, result);
+      cache.add(page);
       const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
 
       setTableData(pageData.length ? pageData : result.slice(0, pageSize));
