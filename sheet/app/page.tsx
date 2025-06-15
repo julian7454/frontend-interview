@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import DataTable, {
   TableHead,
@@ -104,7 +104,7 @@ export default function Home() {
     ? 0
     : Math.min(pageStart + currentPageCount, allData.size);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = () => {
     let deletedCount = 0;
 
     tableData.forEach(item => {
@@ -122,19 +122,18 @@ export default function Home() {
     if (pageData.length === 0) {
       setPage(page > 1 ? page - 1 : page + 1);
     }
+  };
 
-  }, [page, pageStart, tableData]);
-
-  const handleSelectAll = useCallback((isChecked: boolean) => {
+  const handleSelectAll = (isChecked: boolean) => {
     const updated = tableData.map(item => ({
       ...item,
       checked: isChecked,
     }));
     updated.forEach(item => allData.set(item.id, item));
     setTableData(updated);
-  }, [tableData]);
+  };
 
-  const handleSearch = useCallback((searchTerm: string) => {
+  const handleSearch = (searchTerm: string) => {
     const filtered = Array.from(allData.values()).map((item) => ({
       ...item,
       visible:
@@ -149,16 +148,16 @@ export default function Home() {
       .slice(pageStart, pageStart + pageSize);
     setTableData(pageData);
     setTotal(Array.from(allData.values()).filter(item => item.visible).length);
-  }, [pageStart]);
+  };
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = () => {
     if (searchInputRef.current) searchInputRef.current.value = "";
     cache.clear();
     allData.clear();
     setPage(1);
     setTotal(totalItems);
     loadData(1, pageSize, setTableData, setLoading, setError);
-  }, []);
+  };
 
   const handleShowBalanceToggle = (item: AccountDataWithShowBalance) => {
     setTableData(prevData =>
@@ -342,4 +341,3 @@ export default function Home() {
     </div>
   );
 }
-
