@@ -313,6 +313,7 @@ export default function Home() {
             <TableRow>
               <TableCell colSpan={7}>
                 <p className="text-right">
+                  <span className="pr-6">{`${start}-${end} of ${total}`}</span>
                   <button
                     onClick={() => setPage((p) => Math.max(p - 1, 1))}
                     disabled={page === 1}
@@ -320,10 +321,9 @@ export default function Home() {
                   >
                     <span className="material-icons text-sm!">arrow_back_ios</span>
                   </button>
-                  <span>{`${start}-${end} of ${total}`}</span>
                   <button
                     onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
-                    disabled={page === maxPages}
+                    disabled={page === maxPages || error !== null}
                     className="disabled:opacity-50 disabled:cursor-not-allowed material-icons text-2xl ml-2 cursor-pointer"
                   >
                     <span className="material-icons text-sm!">arrow_forward_ios</span>
