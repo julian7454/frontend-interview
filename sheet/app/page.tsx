@@ -199,9 +199,9 @@ export default function Home() {
             ref={searchInputRef}
             onChange={(e) => handleSearch(e.target.value.toLowerCase())}
           />
-          <button className="w-38 h-11 bg-[#FD5558] text-white rounded-md" onClick={handleDelete}>Delete</button>
+          <button className="w-38 h-11 bg-[#FD5558] text-white rounded-md cursor-pointer" onClick={handleDelete}>Delete</button>
           <button
-            className="w-38 h-11 bg-[#9155FD] text-white rounded-md"
+            className="w-38 h-11 bg-[#9155FD] text-white rounded-md cursor-pointer"
             onClick={handleRefresh}
           >
             Refresh Invoice
@@ -280,12 +280,31 @@ export default function Home() {
                         : <span className="badge bg-[#FE7272] text-[#fff]">Unpaid</span>}
                   </TableCell>
                   <TableCell>
-                    <button
-                      onClick={() => handleShowBalanceToggle(item)}
-                      aria-label={`Toggle balance for account ${item.id}`}
-                    >
-                      {item.showBalance ? <span className="material-icons">visibility</span> : <span className="material-icons opacity-50">visibility</span>}
-                    </button>
+                    <div className="flex justify-center items-center gap-5">
+                      <button
+                        onClick={() => {
+
+                          allData.delete(item.id);
+                          const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
+                          setTableData(pageData);
+                          setTotal((prevTotal) => prevTotal - 1);
+                          if (tableData.length === 1 && page > 1) {
+                            setPage((prevPage) => Math.max(prevPage - 1, 1));
+                          }
+                        }}
+                        aria-label={`Delete account ${item.id}`}
+                        className="mr-2 cursor-pointer"
+                      >
+                        <span className="material-icons opacity-50">delete</span>
+                      </button>
+                      <button
+                        onClick={() => handleShowBalanceToggle(item)}
+                        aria-label={`Toggle balance for account ${item.id}`}
+                        className="cursor-pointer"
+                      >
+                        {item.showBalance ? <span className="material-icons">visibility</span> : <span className="material-icons opacity-50">visibility</span>}
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -297,7 +316,7 @@ export default function Home() {
                   <button
                     onClick={() => setPage((p) => Math.max(p - 1, 1))}
                     disabled={page === 1}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed mr-2"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed mr-2 cursor-pointer"
                   >
                     <span className="material-icons text-sm!">arrow_back_ios</span>
                   </button>
@@ -305,7 +324,7 @@ export default function Home() {
                   <button
                     onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
                     disabled={page === maxPages}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed material-icons text-2xl ml-2"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed material-icons text-2xl ml-2 cursor-pointer"
                   >
                     <span className="material-icons text-sm!">arrow_forward_ios</span>
                   </button>
