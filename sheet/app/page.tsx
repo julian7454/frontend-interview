@@ -7,6 +7,7 @@ import DataTable, {
   TableCell,
   TableFoot,
 } from "@/components/data-table";
+import { Skeleton } from "@/components/skeleton";
 import { mockFetch, AccountData, totalItems } from "./api/mock";
 
 type AccountDataWithShowBalance = AccountData & {
@@ -21,15 +22,20 @@ const allData = new Map<number, AccountDataWithShowBalance>();
 const loadData = async (
   page: number,
   pageSize: number,
-  setTableData: React.Dispatch<React.SetStateAction<AccountDataWithShowBalance[]>>
+  setTableData: React.Dispatch<React.SetStateAction<AccountDataWithShowBalance[]>>,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setError: React.Dispatch<React.SetStateAction<string | null>>
 ) => {
   try {
+    setLoading(true);
+    setError(null);
     const pageStart = (page - 1) * pageSize;
 
     if (cache.has(page)) {
       console.log("cache hit for page", page);
       const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
       setTableData(pageData);
+      setLoading(false);
     } else {
       console.log("fetching data for page", page);
       const result: AccountDataWithShowBalance[] = (
@@ -46,9 +52,12 @@ const loadData = async (
       const pageData = Array.from(allData.values()).slice(pageStart, pageStart + pageSize);
 
       setTableData(pageData.length ? pageData : result.slice(0, pageSize));
+      setLoading(false);
     }
   } catch (error) {
     console.error("Error fetching data:", error);
+    setError("Error fetching data");
+    setLoading(false);
   }
 };
 
@@ -56,6 +65,8 @@ export default function Home() {
   const [tableData, setTableData] = useState<Array<AccountDataWithShowBalance>>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(totalItems);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const pageSize = 9;
   const pageStart = (page - 1) * pageSize;
@@ -64,7 +75,7 @@ export default function Home() {
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    loadData(page, pageSize, setTableData);
+    loadData(page, pageSize, setTableData, setLoading, setError);
   }, [page, pageSize]);
 
   useEffect(() => {
@@ -144,7 +155,7 @@ export default function Home() {
     allData.clear();
     setPage(1);
     setTotal(totalItems);
-    loadData(1, pageSize, setTableData);
+    loadData(1, pageSize, setTableData, setLoading, setError);
   }, []);
 
   const handleShowBalanceToggle = (item: AccountDataWithShowBalance) => {
@@ -188,7 +199,7 @@ export default function Home() {
             Refresh Invoice
           </button>
         </div>
-        <DataTable>
+        <DataTable caption={typeof error === "string" ? error : undefined}>
           <TableHead>
             <TableRow>
               <TableCell>
@@ -208,49 +219,59 @@ export default function Home() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {visibleData.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select account ${item.id}`}
-                    checked={item.checked}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
-                  />
-                </TableCell>
-                <TableCell>{`#${item.id}`}</TableCell>
-                <TableCell>
-                  <div className="text-left ml-6">
-                    <strong>{item.name}</strong>
-                    <br />
-                    {item.mail}
-                  </div>
-                </TableCell>
-                <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
-                <TableCell>
-                  {new Date(item.issueDate).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </TableCell>
-                <TableCell>
-                  {item.showBalance
-                    ? `$${Math.trunc(item.balance)}`
-                    : item.hasPaid
-                      ? "Paid"
-                      : "NoPaid"}
-                </TableCell>
-                <TableCell>
-                  <button
-                    onClick={() => handleShowBalanceToggle(item)}
-                    aria-label={`Toggle balance for account ${item.id}`}
-                  >
-                    {item.showBalance ? "Hide Balance" : "Show Balance"}
-                  </button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading
+              ? Array.from({ length: pageSize }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+              : visibleData.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select account ${item.id}`}
+                      checked={item.checked}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
+                    />
+                  </TableCell>
+                  <TableCell>{`#${item.id}`}</TableCell>
+                  <TableCell>
+                    <div className="text-left ml-6">
+                      <strong>{item.name}</strong>
+                      <br />
+                      {item.mail}
+                    </div>
+                  </TableCell>
+                  <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
+                  <TableCell>
+                    {new Date(item.issueDate).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {item.showBalance
+                      ? `$${Math.trunc(item.balance)}`
+                      : item.hasPaid
+                        ? "Paid"
+                        : "NoPaid"}
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      onClick={() => handleShowBalanceToggle(item)}
+                      aria-label={`Toggle balance for account ${item.id}`}
+                    >
+                      {item.showBalance ? "Hide Balance" : "Show Balance"}
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
           <TableFoot>
             <TableRow>
@@ -279,4 +300,3 @@ export default function Home() {
     </div>
   );
 }
-
