@@ -157,3 +157,5 @@ const mockData: AccountData[] = [
     hasPaid: true,
   },
 ] as const;
+
+export const totalItems = mockData.length;
