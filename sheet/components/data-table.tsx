@@ -41,7 +41,7 @@ export function TableCell({ children, colSpan = 1 }: { children: React.ReactNode
             {children}
         </th>;
     }
-    return <td colSpan={colSpan} className="py-2 px-4 text-center">{children}</td>;
+    return <td colSpan={colSpan} className="py-2 px-4 text-center border border-transparent border-b-gray-300">{children}</td>;
 }
 
 

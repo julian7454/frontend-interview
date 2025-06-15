@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import DataTable, {
   TableHead,
   TableBody,
@@ -181,9 +182,16 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-rows-[1fr_auto] min-h-screen">
-      <main className="pt-24 pb-8 px-4">
-        <div className="bg-white shadow-md flex justify-end pt-4 pr-4">
+    <div className="grid grid-rows-[64px_1fr_auto] min-h-screen">
+      <header className="flex justify-end h-[64px] items-center">
+        <div className="avatar avatar-online h-12 mr-8">
+          <div className="rounded-full">
+            <Image src={`https://i.pravatar.cc/300?img14`} alt="User avatar" width={48} height={48} />
+          </div>
+        </div>
+      </header>
+      <main className="pt-8 pb-8 px-4">
+        <div className="bg-white shadow-md flex justify-end pt-4 pr-4 gap-4">
           <input
             className="border border-gray-300 rounded p-2 mb-4 w-38 h-11"
             type="text"
@@ -191,9 +199,9 @@ export default function Home() {
             ref={searchInputRef}
             onChange={(e) => handleSearch(e.target.value.toLowerCase())}
           />
-          <button className="w-38 h-11 bg-red-700 text-white" onClick={handleDelete}>Delete</button>
+          <button className="w-38 h-11 bg-[#FD5558] text-white rounded-md" onClick={handleDelete}>Delete</button>
           <button
-            className="w-38 h-11 bg-purple-700 text-white"
+            className="w-38 h-11 bg-[#9155FD] text-white rounded-md"
             onClick={handleRefresh}
           >
             Refresh Invoice
@@ -239,12 +247,21 @@ export default function Home() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelect(item.id, e.target.checked)}
                     />
                   </TableCell>
-                  <TableCell>{`#${item.id}`}</TableCell>
                   <TableCell>
-                    <div className="text-left ml-6">
-                      <strong>{item.name}</strong>
-                      <br />
-                      {item.mail}
+                    <span className="text-[#9155FD]">{`#${item.id}`}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-left ml-6 flex gap-2 items-center">
+                      <div className="avatar h-8.5">
+                        <div className="rounded-full">
+                          <Image src={`https://i.pravatar.cc/300?img${item.id}`} alt={`Avatar of ${item.name}`} width={34} height={34} />
+                        </div>
+                      </div>
+                      <div>
+                        <strong>{item.name}</strong>
+                        <br />
+                        <a href={`mailto:${item.mail}`}>{item.mail}</a>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{`$${Math.trunc(item.totalBalance)}`}</TableCell>
@@ -259,15 +276,15 @@ export default function Home() {
                     {item.showBalance
                       ? `$${Math.trunc(item.balance)}`
                       : item.hasPaid
-                        ? "Paid"
-                        : "NoPaid"}
+                        ? <span className="badge bg-[#d3f5d3] text-[#56CA00]">Paid</span>
+                        : <span className="badge bg-[#FE7272] text-[#fff]">Unpaid</span>}
                   </TableCell>
                   <TableCell>
                     <button
                       onClick={() => handleShowBalanceToggle(item)}
                       aria-label={`Toggle balance for account ${item.id}`}
                     >
-                      {item.showBalance ? "Hide Balance" : "Show Balance"}
+                      {item.showBalance ? <span className="material-icons">visibility</span> : <span className="material-icons opacity-50">visibility</span>}
                     </button>
                   </TableCell>
                 </TableRow>
@@ -280,16 +297,19 @@ export default function Home() {
                   <button
                     onClick={() => setPage((p) => Math.max(p - 1, 1))}
                     disabled={page === 1}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed mr-2"
                   >
-                    Previous
+                    <span className="material-icons text-sm!">arrow_back_ios</span>
                   </button>
                   <span>{`${start}-${end} of ${total}`}</span>
                   <button
                     onClick={() => setPage((p) => Math.min(p + 1, maxPages))}
                     disabled={page === maxPages}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed material-icons text-2xl ml-2"
                   >
-                    Next
+                    <span className="material-icons text-sm!">arrow_forward_ios</span>
                   </button>
+
                 </p>
               </TableCell>
             </TableRow>
