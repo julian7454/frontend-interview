@@ -7,12 +7,9 @@ type List = {
   name: string;
 };
 
+
 export default function Menu() {
   const [menuList, setMenuList] = useState<List[]>([]);
-
-  if (menuList === []) {
-    return null;
-  }
 
   useEffect(() => {
     async function fetchData() {
@@ -24,11 +21,11 @@ export default function Menu() {
 
   return (
     <div className="px-4">
-      {menuList.map((item) => (
+      {menuList.length ? menuList.map((item) => (
         <ul key={item.id}>
           <li className="list-disc">{item.name}</li>
         </ul>
-      ))}
+      )) : 'Loading...'}
     </div>
   );
 }
