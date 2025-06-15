@@ -192,7 +192,7 @@ export default function Home() {
         </div>
       </header>
       <main className="pt-8 pb-8 px-4">
-        <div className="bg-white shadow-md flex justify-end pt-4 pr-4 gap-4">
+        <div className="bg-white shadow-md flex justify-end pt-6 pb-2 pr-4 gap-4">
           <input
             className="border border-gray-300 rounded p-2 mb-4 w-38 h-11"
             type="text"
@@ -200,12 +200,12 @@ export default function Home() {
             ref={searchInputRef}
             onChange={(e) => handleSearch(e.target.value.toLowerCase())}
           />
-          <button className="w-38 h-11 bg-[#FD5558] text-white rounded-md cursor-pointer" onClick={handleDelete}>Delete</button>
+          <button className="w-38 h-11 bg-[#FD5558] text-white rounded-md cursor-pointer" onClick={handleDelete}>DELETE</button>
           <button
-            className="w-38 h-11 bg-[#9155FD] text-white rounded-md cursor-pointer"
+            className="w-40 h-11 bg-[#9155FD] text-white rounded-md cursor-pointer"
             onClick={handleRefresh}
           >
-            Refresh Invoice
+            REFRESH INVOICE
           </button>
         </div>
         <DataTable caption={typeof error === "string" ? error : undefined}>
