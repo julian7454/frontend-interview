@@ -9,6 +9,7 @@ import DataTable, {
   TableFoot,
 } from "@/components/data-table";
 import { Skeleton } from "@/components/skeleton";
+import Footer from "@/components/footer";
 import { mockFetch, AccountData, totalItems } from "./api/mock";
 
 type AccountDataWithShowBalance = AccountData & {
@@ -335,7 +336,10 @@ export default function Home() {
           </TableFoot>
         </DataTable>
       </main>
-      <footer>footer</footer>
+      <footer>
+        <Footer />
+      </footer>
     </div>
   );
 }
+
