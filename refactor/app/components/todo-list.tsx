@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-const todo = [
+type TodoItem = {
+  id: number;
+  name: string;
+  isCompleted: boolean;
+};
+
+const todo: TodoItem[] = [
   {
     id: 1,
     name: "Buy milk",
@@ -20,12 +26,23 @@ const todo = [
   },
 ];
 
+type ButtonProps = {
+  id: number;
+  name: string;
+  isCompleted: boolean;
+  onClick: () => void;
+};
+
 export default function TodoList() {
-  const [list, setList] = useState(todo);
+  const [list, setList] = useState<TodoItem[]>(todo);
 
   function handleClick(index: number) {
-    list[index].isCompleted = !list[index].isCompleted;
-    setList(list);
+
+    setList(prevList =>
+      prevList.map((item, i) =>
+        i === index ? { ...item, isCompleted: !item.isCompleted } : item
+      )
+    );
   }
 
   return (
@@ -48,12 +65,7 @@ function Button({
   name,
   isCompleted,
   onClick,
-}: {
-  id: number;
-  name: string;
-  isCompleted: boolean;
-  onClick: () => void;
-}) {
+}: ButtonProps) {
   return (
     <button key={id} className="flex gap-2" onClick={onClick}>
       {isCompleted ? <p>✅</p> : <p>❌</p>}
